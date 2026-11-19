@@ -53,6 +53,9 @@ def ask_suggestion(page):
 def citation(page):
     page.locator(".answer .cite").first.click()
     expect(page.locator(".p-src.on")).to_be_visible()
+    passage = page.locator(".p-src.on .p-src-text")
+    assert "`" not in passage.inner_text(), "raw backticks in source panel"
+    assert passage.locator("script, img").count() == 0
     page.wait_for_timeout(400)
     shot(page, "03_answer_with_sources.png")
 

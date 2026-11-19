@@ -72,23 +72,54 @@ async function api(path, opts = {}) {
   return data;
 }
 
-// Tiny markdown: paragraphs, lists, `code`, **bold**, and [n] citations. Everything is escaped first.
-function renderAnswer(text, turnIdx) {
-  const inline = (s) => esc(s)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\[(\d+)\]/g, (_, n) => `<button class="cite" data-turn="${turnIdx}" data-ref="${n}" title="Show source ${n}">${n}</button>`);
-  const blocks = text.replace(/```[\s\S]*?```/g, (m) => m.replace(/```\w*/g, '')).split(/\n{2,}/);
-  return blocks.map((b) => {
-    const lines = b.split('\n').filter((l) => l.trim());
-    if (lines.length && lines.every((l) => /^\s*([-*]|\d+[.)])\s+/.test(l))) {
-      const ordered = /^\s*\d/.test(lines[0]);
-      const items = lines.map((l) => `<li>${inline(l.replace(/^\s*([-*]|\d+[.)])\s+/, ''))}</li>`).join('');
-      return ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`;
+// Small markdown renderer used for answers, passages and tickets: paragraphs, bullet and numbered
+// lists, ## headings, `code` and **bold**. Text is HTML-escaped before any tag is added, so source
+// documents can't inject markup. \u0001 / \u0002 are mark start/end sentinels from markSpans.
+function renderMd(text, { turnIdx = null } = {}) {
+  let markOpen = false;
+  const inline = (raw) => {
+    let h = esc(raw)
+      .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    if (turnIdx !== null) h = h.replace(/\[(\d+)\]/g, (_, n) => `<button class="cite" data-turn="${turnIdx}" data-ref="${n}" title="Show source ${n}">${n}</button>`);
+    // keep <mark> balanced inside each line so list items and paragraphs stay valid HTML
+    let out = markOpen ? '<mark>' : '';
+    for (const ch of h) {
+      if (ch === '\u0001') { if (!markOpen) { out += '<mark>'; markOpen = true; } }
+      else if (ch === '\u0002') { if (markOpen) { out += '</mark>'; markOpen = false; } }
+      else out += ch;
     }
-    return `<p>${lines.map(inline).join('<br>')}</p>`;
-  }).join('');
+    return markOpen ? out + '</mark>' : out;
+  };
+  const src = String(text || '').replace(/```\w*\n?/g, '');
+  const html = [];
+  let para = [], list = null;
+  const flushPara = () => { if (para.length) html.push(`<p>${para.join('<br>')}</p>`); para = []; };
+  const flushList = () => { if (list) html.push(`<${list.tag}>${list.items.map((x) => `<li>${x}</li>`).join('')}</${list.tag}>`); list = null; };
+  for (const line of src.split('\n')) {
+    const bare = line.replace(/[\u0001\u0002]/g, '');
+    const item = bare.match(/^\s*([-*•]|\d+[.)])\s+/);
+    const head = bare.match(/^\s*#{1,4}\s+/);
+    if (!bare.trim()) { flushPara(); flushList(); continue; }
+    if (item) {
+      flushPara();
+      const tag = /\d/.test(item[1]) ? 'ol' : 'ul';
+      if (list && list.tag !== tag) flushList();
+      list ||= { tag, items: [] };
+      list.items.push(inline(line.replace(/^(\s|[\u0001\u0002])*([-*•]|\d+[.)])\s+/, (m) => m.replace(/[^\u0001\u0002]/g, ''))));
+    } else if (head) {
+      flushPara(); flushList();
+      html.push(`<p class="md-h">${inline(line.replace(/^(\s|[\u0001\u0002])*#{1,4}\s+/, (m) => m.replace(/[^\u0001\u0002]/g, '')))}</p>`);
+    } else {
+      if (list && /^\s{2,}/.test(bare)) { list.items[list.items.length - 1] += ' ' + inline(line.trim()); continue; }
+      flushList();
+      para.push(inline(line));
+    }
+  }
+  flushPara(); flushList();
+  return html.join('');
 }
+const renderAnswer = (text, turnIdx) => renderMd(text, { turnIdx });
 
 // shell
 function setActiveNav(view) {
@@ -525,15 +556,14 @@ function computeHighlights(t) {
 }
 
 function markSpans(text, spans) {
-  if (!spans.length) return esc(text);
   const sorted = [...spans].sort((a, b) => a[0] - b[0]);
   let out = '', pos = 0;
   for (const [a, b] of sorted) {
     if (a < pos) continue;
-    out += esc(text.slice(pos, a)) + '<mark>' + esc(text.slice(a, b)) + '</mark>';
+    out += text.slice(pos, a) + '\u0001' + text.slice(a, b) + '\u0002';
     pos = b;
   }
-  return out + esc(text.slice(pos));
+  return renderMd(out + text.slice(pos));
 }
 
 // escalation
@@ -654,7 +684,7 @@ async function openTicket(id) {
         <span>Requester</span><span>${esc(t.requester || '–')}</span>
       </div>
       <h4 class="sec">Customer question</h4><div class="quote">${esc(t.question || t.subject)}</div>
-      ${t.bot_answer ? `<h4 class="sec">What the assistant said</h4><div class="quote" style="font-size:13.5px">${esc(t.bot_answer)}</div>` : ''}
+      ${t.bot_answer ? `<h4 class="sec">What the assistant said</h4><div class="quote md" style="font-size:13.5px">${renderMd(t.bot_answer)}</div>` : ''}
       ${t.conversation_id ? `<a class="btn sm" href="#/c/${t.conversation_id}">${ICON.chat}Open conversation</a>` : ''}
       <h4 class="sec">Activity</h4>
       <div class="timeline">${events.map((e) => `<div class="ev ${e.sys ? '' : 'note'}"><div class="when">${new Date(e.at * 1000).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>${esc(e.text)}</div>`).join('')}</div>
@@ -784,7 +814,7 @@ async function openDoc(source) {
   $('#dClose').onclick = closeModal;
   const chunks = await api('/api/documents/chunks?source=' + encodeURIComponent(source));
   $('#docBody').innerHTML = `<p class="muted" style="margin-top:0">${chunks.length} passages · this is exactly what the retriever sees.</p>` +
-    chunks.map((c) => `<div class="chunk"><div class="loc">${esc(c.location)} · ${c.id}</div>${esc(c.text)}</div>`).join('');
+    chunks.map((c) => `<div class="chunk"><div class="loc">${esc(c.location)} · ${c.id}</div><div class="md">${renderMd(c.text)}</div></div>`).join('');
 }
 
 // Analytics
