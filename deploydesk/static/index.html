@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DeployDesk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <strong>DeployDesk</strong> <span id="customer" class="muted"></span>
+  <nav><a href="/" class="active">Ask</a> <a href="/dashboard">Dashboard</a> <a href="/docs">API</a></nav>
+</header>
+<main class="chat">
+  <div id="log"><p class="muted">Ask something about the docs. Answers cite the chunks they came from.</p></div>
+  <form id="ask">
+    <input id="q" placeholder="e.g. how do I allow requests from another origin?" autocomplete="off" required>
+    <select id="mode"><option>hybrid</option><option>vector</option><option>bm25</option></select>
+    <button>Ask</button>
+  </form>
+  <details><summary>API key</summary><input id="key" value="dev-key-change-me"></details>
+</main>
+<script>
+const log = document.getElementById('log');
+fetch('/health').then(r => r.json()).then(h => {
+  document.getElementById('customer').textContent = '· ' + h.customer + ' · ' + h.chunks + ' chunks';
+});
+
+function esc(s) { return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+document.getElementById('ask').onsubmit = async (e) => {
+  e.preventDefault();
+  const q = document.getElementById('q').value.trim();
+  if (log.querySelector('.muted')) log.innerHTML = '';
+  log.insertAdjacentHTML('beforeend', `<div class="msg user">${esc(q)}</div>`);
+  const r = await fetch('/ask', {method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-API-Key': document.getElementById('key').value},
+    body: JSON.stringify({question: q, mode: document.getElementById('mode').value})});
+  const data = await r.json();
+  if (!r.ok) { log.insertAdjacentHTML('beforeend', `<div class="msg err">${r.status}: ${esc(JSON.stringify(data.detail))}</div>`); return; }
+  const id = 'a' + Date.now();
+  // [n] markers become links that open the matching source below the answer
+  const answer = esc(data.answer).replace(/\[(\d+)\]/g, `<a href="#${id}-$1" class="cite">[$1]</a>`);
+  const sources = data.retrieved.map(s => `<li id="${id}-${s.ref}"><details><summary>[${s.ref}] ${esc(s.source)} <span class="muted">${esc(s.location)}</span></summary><p>${esc(s.snippet)}…</p></details></li>`).join('');
+  log.insertAdjacentHTML('beforeend', `<div class="msg bot"><p>${answer}</p><ol class="sources">${sources}</ol>
+    <small class="muted">${data.generator} · retrieval ${data.timing_ms.retrieval} ms · total ${data.timing_ms.total} ms</small></div>`);
+  log.querySelectorAll('a.cite').forEach(a => a.onclick = () => { const d = document.querySelector(a.getAttribute('href') + ' details'); if (d) d.open = true; });
+  document.getElementById('q').value = '';
+  log.scrollTop = log.scrollHeight;
+};
+// ?q=... in the url asks straight away, handy for sharing a question with the client
+const preset = new URLSearchParams(location.search).get('q');
+if (preset) { document.getElementById('q').value = preset; document.getElementById('ask').requestSubmit(); }
+</script>
+</body>
+</html>

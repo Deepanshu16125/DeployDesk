@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DeployDesk · dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <strong>DeployDesk</strong> <span id="customer" class="muted"></span>
+  <nav><a href="/">Ask</a> <a href="/dashboard" class="active">Dashboard</a> <a href="/docs">API</a></nav>
+</header>
+<main>
+  <section class="cards" id="cards"></section>
+  <h3>Eval (<span id="nq"></span> labelled questions)</h3>
+  <table id="eval"><thead><tr><th>mode</th><th>hit@1</th><th>hit@3</th><th>hit@5</th><th>MRR@10</th><th>citation acc.</th><th>p50 ms</th><th>p95 ms</th></tr></thead><tbody></tbody></table>
+  <h3>Live /ask latency (this process)</h3>
+  <p id="live" class="muted"></p>
+</main>
+<script>
+fetch('/stats').then(r => r.json()).then(s => {
+  document.getElementById('customer').textContent = '· ' + s.customer;
+  const cards = [['documents', s.documents], ['chunks', s.chunks], ['generator', s.generator], ['retrieval', s.retrieval_mode]];
+  document.getElementById('cards').innerHTML = cards.map(([k, v]) => `<div class="card"><div class="muted">${k}</div><div class="big">${v}</div></div>`).join('');
+  const ev = s.eval;
+  if (ev) {
+    document.getElementById('nq').textContent = ev.questions;
+    document.querySelector('#eval tbody').innerHTML = Object.entries(ev.modes).map(([m, r]) =>
+      `<tr><td>${m}</td><td>${r['hit@1']}</td><td>${r['hit@3']}</td><td>${r['hit@5']}</td><td>${r['mrr@10']}</td><td>${r.citation_accuracy ?? '-'}</td><td>${r.latency_p50_ms}</td><td>${r.latency_p95_ms}</td></tr>`).join('');
+  }
+  const a = s.live['/ask'];
+  document.getElementById('live').textContent = a.count ? `${a.count} requests · p50 ${a.p50_ms} ms · p95 ${a.p95_ms} ms` : 'no requests yet';
+});
+</script>
+</body>
+</html>
