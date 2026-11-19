@@ -21,7 +21,7 @@ flowchart LR
     D[customer docs<br/>PDF / MD / HTML] --> I[ingest<br/>800-char chunks, 150 overlap]
     I --> E[MiniLM-L6 embeddings] --> F[(FAISS)]
     I --> B[(BM25)]
-    Q[question + previous question] --> H{hybrid search<br/>RRF k=60}
+    Q[question + previous question] --> H{hybrid search<br/>RRF k=60, top 3 to the model}
     F --> H
     B --> H
     H --> G{cross-encoder score<br/>above -6.5?}
@@ -47,17 +47,19 @@ Retrieval, 63 questions I labelled by hand (`eval/qa.jsonl`). A hit needs the ri
 
 Hybrid is the default because it finds the right passage in the top 5 most often. Reranking adds ~145 ms for at most one extra hit@1 on this set, so it's off. I still use the cross-encoder, just for the refuse-or-answer check.
 
-Answers, Qwen2.5-3B (Q4_K_M) on Ollama, CPU only (`eval/answer_eval.py` → `eval/results_llm.json`). I restarted Ollama before the run so its prompt cache didn't fake the first-token times:
+Answers, Qwen2.5-3B (Q4_K_M) on Ollama, CPU only (`eval/answer_eval.py` → `eval/results_llm.json`). I restarted Ollama before each run so its prompt cache didn't fake the first-token times:
 
 - 63/63 real questions answered, 10/10 off-topic questions refused (capital of France, Kestrel billing questions the docs don't cover, etc.)
-- every answer has at least one citation; 81.7% of sentences carry one
-- 42.6% of cited sentences are judged "entailed" by their cited passage by an NLI model (deberta-v3-base). This is a strict check, since paraphrases often come out neutral, and it moved between 39% and 45% across my runs. It's the number I'd most like to push up.
-- cites the labelled document 68.3% of the time; the right passage was in the context 88.9% of the time
-- first token p50 **2.0 s** / p95 3.5 s, **21.6 tokens/s**, full answer p50 4.4 s (mean 47 tokens)
+- every answer has at least one citation; 93% of sentences carry one
+- 54.2% of cited sentences are judged "entailed" by their cited passage by an NLI model (deberta-v3-base). It's a strict check, because a fair paraphrase often comes out "neutral".
+- cites the labelled document 81% of the time; the right passage was in the context 85.7% of the time
+- first token p50 **1.6 s** / p95 2.5 s, **20.6 tokens/s**, full answer p50 3.8 s (mean 45 tokens)
 
-Through the real server with the browser's endpoint (`eval/replay.py`, 24 new questions in `eval/demo_questions.txt`): first token p50 2.3 s, full answer p50 4.9 s. The two Kestrel billing questions in there were refused, which is what should happen.
+That 54% came from one change I made late. Before it, the model got 4 passages at temperature 0.1 with a looser "2 to 5 sentences" prompt, and only 42.6% of cited sentences passed (`eval/results_llm_baseline.json`). Earlier runs of that setup landed between 39% and 45%. Giving it 3 passages, temperature 0, and asking for one claim per sentence in the source's own words raised it to 54.2%. Sentences with a citation went from 82% to 93% and right-document citations from 68% to 81%. It also made first token faster, since the prompt is shorter. The cost is that the right passage is in the context slightly less often (88.9% → 85.7%), because one fewer passage goes in.
 
-Docker (`eval/docker_coldstart.json`): the image is 1.81 GB with CPU-only torch and both small models baked in. From `docker run` to a healthy `/health` took 4.2 to 4.6 s over three runs, and the first answer after that took 3.2 to 6.2 s (the first one pays for loading the models into memory). I ran it with `sudo docker run --network host` against Ollama on the host.
+Through the real server with the browser's endpoint (`eval/replay.py`, 24 new questions in `eval/demo_questions.txt`): first token p50 1.8 s / p95 2.4 s, full answer p50 4.0 s. The two Kestrel billing questions in there were refused, which is what should happen.
+
+Docker (`eval/docker_coldstart.json`): the image is 1.81 GB with CPU-only torch and both small models baked in. From `docker run` to a healthy `/health` took 4.3 to 4.6 s over three runs, and the first answer after that took 3.3 to 5.2 s (the first one pays for loading the models into memory). I ran it with `sudo docker run --network host` against Ollama on the host.
 
 ## Running it
 
@@ -97,7 +99,7 @@ Logs go to `logs/requests.jsonl` (request id, path, status, latency, TTFT). The 
 ## What didn't work, and trade-offs
 
 - **The reranker.** I expected the cross-encoder to be the big win. On the first index it actually hurt hybrid. After I cleaned up the ingest it helped a bit, and on the final index it makes no real difference to hit@5 and costs ~150 ms. So it's off by default.
-- **Groundedness is mediocre.** A 3B model on CPU blends sources and paraphrases, and only ~43% of cited sentences pass the strict NLI check. A bigger model would help, but on this box the 7B would put first token at 5+ s. I chose speed. I also tried Qwen 1.5B: it ran at ~35 tok/s but wrote long answers and dropped citations.
+- **Groundedness is only okay.** A 3B model on CPU blends sources and paraphrases. The tighter prompt got the strict NLI check from ~43% to 54%, but that still means almost half the cited sentences aren't clearly backed by their passage. A bigger model would probably help. I didn't try a 7B because the 3B already takes ~1.6 s to the first token on this CPU, and I cared more about speed. I also tried Qwen 1.5B: it ran at ~35 tok/s but wrote long answers and dropped citations.
 - **Small models and citation format.** The model kept writing `[1, 2]` or putting `[1]` after the full stop. Prompting fixed most of it and `normalize_citations` fixes the rest.
 - **Ingest cleanup moved every number.** Fixing HTML line breaks, mkdocs anchors, code comments being read as headings, and PDF line wrapping changed the results by a few points each time. The v0.1 numbers I first wrote down (hybrid hit@1 0.73) came from a dirtier index and aren't comparable.
 - **Follow-ups are basic.** I prepend the previous question to retrieval and tell the model what it was. That fixed "and how do I set that up in production?" but it isn't real query rewriting.

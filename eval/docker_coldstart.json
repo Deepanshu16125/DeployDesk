@@ -3,18 +3,18 @@
   "runs": [
     {
       "ready_s": 4.6,
-      "first_answer_s": 6.2,
-      "retrieval_ms": 1023.5
+      "first_answer_s": 5.2,
+      "retrieval_ms": 971.3
     },
     {
-      "ready_s": 4.4,
-      "first_answer_s": 4.2,
-      "retrieval_ms": 844.5
+      "ready_s": 4.3,
+      "first_answer_s": 3.3,
+      "retrieval_ms": 825.7
     },
     {
-      "ready_s": 4.2,
-      "first_answer_s": 3.2,
-      "retrieval_ms": 820.5
+      "ready_s": 4.5,
+      "first_answer_s": 3.5,
+      "retrieval_ms": 816.8
     }
   ]
 }
