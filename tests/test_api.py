@@ -177,7 +177,7 @@ def test_settings_roundtrip(client):
 def test_analytics_and_metrics(client):
     a = client.get("/api/analytics", headers=H).json()
     assert a["counts"]["questions"] >= 2 and a["counts"]["tickets_total"] >= 1
-    assert len(a["volume"]) in (14, 24)
+    assert len(a["volume"]) in (14, 18, 24)
     m = client.get("/metrics", headers=H).json()
     assert m["/ask"]["count"] >= 1 and m["/api/ask/stream"]["count"] >= 2
     assert (client.tmp / "requests.jsonl").exists()

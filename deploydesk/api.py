@@ -484,6 +484,18 @@ def analytics():
         hours.append({"day": time.strftime("%H:00", time.localtime(end - 3600)),
                       "count": sum(1 for r in reqs if end - 3600 <= r["created_at"] < end)})
     span_days = (today - reqs[0]["created_at"]) / 86400 if reqs else 0
+    # a fresh deployment has everything inside one hour bar, so zoom in to 10-minute buckets
+    slots = []
+    for i in range(17, -1, -1):
+        end = today - i * 600
+        slots.append({"day": time.strftime("%H:%M", time.localtime(end - 600)),
+                      "count": sum(1 for r in reqs if end - 600 <= r["created_at"] < end)})
+    if span_days > 2:
+        volume, unit = days, "day"
+    elif span_days > 3 / 24:
+        volume, unit = hours, "hour"
+    else:
+        volume, unit = slots, "10 min"
     counts: dict[str, int] = {}
     for m in store._all("SELECT citations FROM messages WHERE role='assistant'"):
         for c in json.loads(m["citations"] or "[]"):
@@ -503,7 +515,7 @@ def analytics():
             "latency": {"histogram_s": _histogram(lat), "p50_s": _pct(lat, 50), "p95_s": _pct(lat, 95),
                         "n": len(lat), "ttft_p50_ms": _pct(ttft, 50), "ttft_p95_ms": _pct(ttft, 95),
                         "tokens_per_s_p50": _pct(tps, 50)},
-            "volume": days if span_days > 2 else hours, "volume_unit": "day" if span_days > 2 else "hour",
+            "volume": volume, "volume_unit": unit,
             "top_sources": [{"source": s, "count": n} for s, n in top_sources],
             "unanswered": unanswered, "feedback": store.recent_feedback(8), "eval": evals,
             "generator": settings.generator, "model": settings.ollama_model}
