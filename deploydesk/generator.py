@@ -17,7 +17,8 @@ SYSTEM = """You are the support assistant for {customer}. Answer using ONLY the 
 Rules:
 - Put the source number in square brackets at the end of EVERY sentence, before the full stop. Example:
   "Use `CORSMiddleware` to allow other origins [2]. Pass the allowed URLs in `allow_origins` [2]."
-- Be concise: 2 to 5 sentences, or a short list of steps. Include exact names (functions, flags, settings) from the sources.
+- Be concise: 2 to 4 sentences. Each sentence makes one claim from one source.
+- Stay close to the source's own words; reuse its phrases instead of paraphrasing. Include exact names (functions, flags, settings).
 - Only if none of the sources are about the question, reply exactly: "{not_found}"
   If they cover part of it, answer that part and say what is missing.
 - Never invent sources, numbers, URLs or code that is not in the sources."""
@@ -27,7 +28,7 @@ def build_messages(question: str, chunks: list[Chunk], customer: str) -> list[di
     context = "\n\n".join(f"[{i + 1}] {c.source} — {c.location}\n{c.text}" for i, c in enumerate(chunks))
     return [{"role": "system", "content": SYSTEM.format(customer=customer, not_found=NOT_FOUND)},
             {"role": "user", "content": f"Sources:\n\n{context}\n\nQuestion: {question}\n\n"
-                                        "Answer in 2 to 5 sentences using only the sources above, staying close to their wording. "
+                                        "Answer in 2 to 4 short sentences using only the sources above. Reuse their wording, one claim per sentence. "
                                         "End every sentence with its source number, like [1]. No code blocks."}]
 
 
@@ -84,7 +85,7 @@ class OllamaGenerator:
     def stream(self, question: str, chunks: list[Chunk]) -> Iterator[str]:
         payload = {"model": self.model, "messages": build_messages(question, chunks, self.customer),
                    "stream": True, "keep_alive": "30m",
-                   "options": {"temperature": 0.1, "num_ctx": 4096, "num_predict": 320}}
+                   "options": {"temperature": 0, "num_ctx": 4096, "num_predict": 320}}
         t0 = time.perf_counter()
         first = None
         with httpx.stream("POST", f"{self.url}/api/chat", json=payload, timeout=httpx.Timeout(180, connect=3)) as r:
