@@ -1,0 +1,26 @@
+services:
+  deploydesk:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DEPLOYDESK_CONFIG: /app/config/customer.yaml
+      DEPLOYDESK_API_KEYS: ${DEPLOYDESK_API_KEYS:-dev-key-change-me}
+      DEPLOYDESK_GENERATOR: ${DEPLOYDESK_GENERATOR:-extractive}
+      OLLAMA_URL: http://ollama:11434
+    volumes:
+      - ./data:/app/data        # customer docs in data/raw, index written to data/index
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # optional local LLM: docker compose --profile llm up, then
+  # docker compose exec ollama ollama pull qwen2.5:0.5b
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["llm"]
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollama:
