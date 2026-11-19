@@ -1,0 +1,45 @@
+{
+  "questions": 63,
+  "chunks": 1461,
+  "documents": 67,
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "generator": "extractive",
+  "modes": {
+    "vector": {
+      "hit@1": 0.587,
+      "hit@3": 0.889,
+      "hit@5": 0.921,
+      "hit@10": 0.952,
+      "mrr@10": 0.734,
+      "citation_accuracy": 0.968,
+      "answered_with_citation": 63,
+      "latency_p50_ms": 5.7,
+      "latency_p95_ms": 9.1,
+      "latency_mean_ms": 5.8
+    },
+    "bm25": {
+      "hit@1": 0.603,
+      "hit@3": 0.825,
+      "hit@5": 0.873,
+      "hit@10": 0.905,
+      "mrr@10": 0.72,
+      "citation_accuracy": 0.873,
+      "answered_with_citation": 63,
+      "latency_p50_ms": 1.2,
+      "latency_p95_ms": 1.9,
+      "latency_mean_ms": 1.3
+    },
+    "hybrid": {
+      "hit@1": 0.73,
+      "hit@3": 0.841,
+      "hit@5": 0.905,
+      "hit@10": 0.952,
+      "mrr@10": 0.806,
+      "citation_accuracy": 0.952,
+      "answered_with_citation": 63,
+      "latency_p50_ms": 6.5,
+      "latency_p95_ms": 9.0,
+      "latency_mean_ms": 6.9
+    }
+  }
+}
