@@ -1,0 +1,23 @@
+{
+  "model": "qwen2.5-3b-local",
+  "rerank": true,
+  "questions": 63,
+  "off_topic_questions": 10,
+  "answered": 62,
+  "false_refusals": 1,
+  "off_topic_refused": 10,
+  "answers_with_citation": 1.0,
+  "sentences_with_citation": 0.851,
+  "cited_sentences_supported_nli": 0.453,
+  "cited_sentences_supported_judge": null,
+  "judge_model": "",
+  "cites_correct_source": 0.742,
+  "gold_passage_in_context": 0.871,
+  "key_phrase_in_answer": 0.855,
+  "ttft_p50_ms": 1731.0,
+  "ttft_p95_ms": 3466.8,
+  "tokens_per_s_p50": 20.4,
+  "answer_tokens_mean": 45.8,
+  "total_p50_ms": 3980.9,
+  "total_p95_ms": 8161.1
+}

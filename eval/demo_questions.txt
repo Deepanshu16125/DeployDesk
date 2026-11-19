@@ -1,0 +1,24 @@
+My FastAPI app works locally but the browser blocks calls from our React frontend. What do I need to add?
+Should I run gunicorn with multiple workers inside each container on Kestrel?
+How do I read DATABASE_URL from the environment instead of hardcoding it?
+Our env vars all start with KESTREL_. Can the settings class pick them up automatically?
+Is there a way to run a cleanup job after the response is sent?
+How do I return a 201 when a resource is created?
+What's the right way to reject a request with a 404 and a custom message?
+How do I stop the password hash from showing up in the API response?
+We need to accept file uploads up to a few MB. What should the endpoint look like?
+How do I add a header with the processing time to every response?
+Do I need a reverse proxy in front of uvicorn, and how do I configure it?
+What does uvicorn do on SIGTERM, and how long does it wait for in-flight requests?
+How do I validate that end_date is after start_date in a Pydantic model?
+Can I protect all routes with one API key dependency instead of adding it everywhere?
+How should we pin dependency versions before deploying?
+A customer's security questionnaire asks which NIST CSF functions we cover. What are they?
+What does NIST say makes an AI system trustworthy?
+What is a CSF Target Profile and how is it different from a Current Profile?
+How should we handle cybersecurity risk from our third-party suppliers?
+How do I write tests for my endpoints without starting a server?
+Can uvicorn listen on a unix socket behind nginx?
+What's the difference between a TLS termination proxy and the app handling HTTPS itself?
+Does Kestrel offer a free tier for students?
+How do I change my billing card?

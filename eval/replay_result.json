@@ -1,0 +1,7 @@
+{
+  "requests": 24,
+  "client_ttft_p50_ms": 2433,
+  "client_ttft_p95_ms": 3555,
+  "client_total_p50_ms": 4378,
+  "client_total_p95_ms": 6480
+}

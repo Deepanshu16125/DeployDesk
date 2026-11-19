@@ -1,4 +1,4 @@
-"""Retrieval + answer eval over eval/qa.jsonl.
+"""Retrieval eval over eval/qa.jsonl.
 
 A retrieved chunk counts as relevant if it comes from the labelled source file
 AND contains the labelled key phrase. Doc-level labels alone were too lenient
@@ -27,12 +27,12 @@ def pct(vals, p):
     return s[min(len(s) - 1, int(round(p / 100 * (len(s) - 1))))]
 
 
-def eval_mode(index, rows, mode, gen, k_values=(1, 3, 5, 10)):
+def eval_mode(index, rows, mode, gen, k_values=(1, 3, 5, 10), rerank=False):
     hits = {k: 0 for k in k_values}
     rr_total, cite_ok, answered, lat = 0.0, 0, 0, []
     for row in rows:
         t0 = time.perf_counter()
-        results = index.search(row["q"], k=max(k_values), mode=mode)
+        results = index.search(row["q"], k=max(k_values), mode=mode, rerank=rerank)
         chunks = [c for c, _ in results]
         out = answer_with_fallback(gen, row["q"], chunks[:5]) if gen else None
         lat.append((time.perf_counter() - t0) * 1000)
@@ -65,11 +65,12 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--modes", default="vector,bm25,hybrid")
     ap.add_argument("--out", default="eval/results.json")
+    ap.add_argument("--rerank", action="store_true", help="add the cross-encoder rerank step after retrieval")
     args = ap.parse_args()
 
     s = load_settings()
-    index = Index.load(s.index_dir, s.embedding_model)
-    index.search("warmup", 1)  # first call loads the model, keep it out of the latency numbers
+    index = Index.load(s.index_dir, s.embedding_model, s.reranker_model)
+    index.search("warmup", 1, rerank=args.rerank)  # first call loads the model, keep it out of the latency numbers
     rows = [json.loads(l) for l in open(args.qa) if l.strip()]
     if args.limit:
         rows = rows[: args.limit]
@@ -77,12 +78,12 @@ def main():
     if args.generator == "extractive":
         gen = ExtractiveGenerator()
     elif args.generator == "ollama":
-        gen = OllamaGenerator(s.ollama_url, s.ollama_model)
+        gen = OllamaGenerator(s.ollama_url, s.ollama_model, s.customer_name)
 
     report = {"questions": len(rows), "chunks": len(index.chunks), "documents": len({c.source for c in index.chunks}),
-              "embedding_model": s.embedding_model, "generator": args.generator, "modes": {}}
+              "embedding_model": s.embedding_model, "generator": args.generator, "rerank": args.rerank, "modes": {}}
     for mode in args.modes.split(","):
-        report["modes"][mode] = eval_mode(index, rows, mode, gen)
+        report["modes"][mode] = eval_mode(index, rows, mode, gen, rerank=args.rerank)
         print(mode, json.dumps(report["modes"][mode]))
     Path(args.out).write_text(json.dumps(report, indent=2))
     print("wrote", args.out)
