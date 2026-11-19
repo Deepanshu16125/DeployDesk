@@ -1,6 +1,9 @@
 .venv
-data
+.git
+data/index
+data/*.db
+data/raw/uploads
 logs
 shots
-.git
 tests
+**/__pycache__
