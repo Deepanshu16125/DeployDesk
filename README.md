@@ -32,6 +32,17 @@ flowchart LR
     U --> T
 ```
 
+Screenshots (1440x900, from the e2e run against the real app):
+
+| | |
+|---|---|
+| ![Answer with sources](shots/03_answer_with_sources.png) | ![Analytics](shots/04_analytics.png) |
+| Ask: cited answer, source panel with the supporting sentence highlighted | Analytics: volume, latency, eval results |
+| ![Tickets](shots/06_ticket_drawer.png) | ![Knowledge base](shots/05_knowledge_base.png) |
+| Tickets: escalated question with the bot's answer attached | Knowledge base: upload, passages, delete |
+
+The rest are in [shots/](shots/).
+
 Nothing leaves the box: embeddings, reranker and LLM all run locally. That was requirement R3 in the brief. There's a Gemini generator behind the same interface for teams that are allowed to use a cloud model, but I haven't tested it against a real key.
 
 ## Results
