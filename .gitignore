@@ -5,3 +5,5 @@ __pycache__/
 data/index/
 logs/
 .env
+data/*.db
+data/raw/uploads/
