@@ -23,7 +23,7 @@ class Settings:
     retrieval_mode: str = "hybrid"
     rerank: bool = False
     top_k: int = 5
-    context_k: int = 4
+    context_k: int = 3
     rrf_k: int = 60
     min_rerank_score: float = -6.5
     generator: str = "extractive"
