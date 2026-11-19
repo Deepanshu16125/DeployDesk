@@ -31,7 +31,7 @@ def load_document(path: Path) -> list[tuple[str, str]]:
     ext = path.suffix.lower()
     if ext == ".pdf":
         reader = PdfReader(str(path))
-        return [(f"page {i + 1}", _clean(p.extract_text() or "")) for i, p in enumerate(reader.pages)]
+        return [(f"page {i + 1}", _clean(_unwrap_pdf(p.extract_text() or ""))) for i, p in enumerate(reader.pages)]
     if ext in (".html", ".htm"):
         soup = BeautifulSoup(path.read_text(errors="ignore"), "html.parser")
         for tag in soup(["script", "style", "nav", "header", "footer", "aside"]):
@@ -50,6 +50,12 @@ def load_document(path: Path) -> list[tuple[str, str]]:
     # drop fenced-code language markers / admonition syntax but keep code text
     text = re.sub(r"\{\*[^}]*\*\}", "", text)
     return _split_sections(_strip_markdown(text), heading_re=r"^#{1,4} +(.+)$")
+
+
+def _unwrap_pdf(text: str) -> str:
+    # pypdf keeps the PDF's visual line breaks: "sys-\ntem", sentences split across lines
+    text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
+    return re.sub(r"(?<![.:;!?\n])\n(?![\n•●\-–]|[A-Z]{2,}\b)", " ", text)
 
 
 def _strip_markdown(text: str) -> str:
