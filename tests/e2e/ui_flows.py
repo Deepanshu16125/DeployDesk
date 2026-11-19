@@ -88,6 +88,7 @@ def escalate(page):
 @step("off-topic question is refused")
 def off_topic(page):
     page.click("#newChat")
+    page.wait_for_selector(".hero")
     page.fill("#composer", "What's a good recipe for paneer butter masala?")
     page.keyboard.press("Enter")
     page.wait_for_selector(".notfound", timeout=60000)
@@ -149,7 +150,7 @@ def kb(page):
 @step("analytics renders charts")
 def analytics(page):
     page.goto(BASE + "/#/analytics")
-    page.wait_for_selector(".chart svg rect.bar", timeout=15000)
+    page.wait_for_selector(".chart svg rect.bar", state="attached", timeout=15000)
     assert page.locator(".kpi").count() == 6
     page.wait_for_timeout(700)
     shot(page, "04_analytics.png")

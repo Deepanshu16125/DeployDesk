@@ -1,8 +1,7 @@
-# Kestrel Cloud support desk. One file per customer; point DEPLOYDESK_CONFIG at it.
 customer_name: Kestrel Cloud
 assistant_name: Kestrel Help
-greeting: Ask about deploying Python APIs on Kestrel, or about our security and compliance posture. Answers come
-  from the docs your team already maintains, with sources.
+greeting: Ask about deploying Python APIs on Kestrel, or about our security and compliance
+  posture. Answers come from the docs your team already maintains, with sources.
 suggested_questions:
 - How do I allow requests from a frontend on a different origin?
 - How many uvicorn workers should I run in a container?
@@ -16,7 +15,7 @@ reranker_model: cross-encoder/ms-marco-MiniLM-L-6-v2
 chunk_size: 800
 chunk_overlap: 150
 retrieval_mode: hybrid
-rerank: true
+rerank: false
 top_k: 5
 context_k: 4
 rrf_k: 60

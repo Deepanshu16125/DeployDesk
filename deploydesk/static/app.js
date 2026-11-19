@@ -141,7 +141,11 @@ document.addEventListener('keydown', (e) => {
     if (!location.hash.startsWith('#/ask')) location.hash = '#/ask'; else $('#composer')?.focus();
   }
 });
-$('#newChat').onclick = () => { state.conversationId = null; state.turns = []; location.hash = '#/ask'; route(true); };
+$('#newChat').onclick = () => {
+  state.conversationId = null; state.turns = []; state.ticket = null;
+  // let the hashchange handler render, otherwise it fires later and wipes a question typed in between
+  if (location.hash !== '#/ask') location.hash = '#/ask'; else route(true);
+};
 
 // router
 async function route(force) {
@@ -193,7 +197,7 @@ function viewAsk(conversationId, fresh) {
   if (conversationId) {
     loadConversation(conversationId);
   } else {
-    if (fresh || state.conversationId) { state.conversationId = null; state.turns = []; }
+    if (fresh || state.conversationId) { state.conversationId = null; state.turns = []; state.ticket = null; }
     renderThread();
     const q = new URLSearchParams(location.hash.split('?')[1] || '').get('q');
     if (q) { ta.value = q; submit(); }
@@ -269,7 +273,7 @@ function renderThread() {
 function turnHTML(t, i) {
   const sources = t.retrieved?.length
     ? `<div class="label-row">${ICON.book}Sources</div>
-       <div class="sources-row">${t.retrieved.map((s, k) => `
+       <div class="sources-row ${t._srcShown ? '' : 'enter'}">${t.retrieved.map((s, k) => `
          <button class="src-card ${state.activeTurn === i && state.activeRef === s.ref ? 'on' : ''}" data-turn="${i}" data-ref="${s.ref}" style="animation-delay:${k * 50}ms">
            <div class="n">[${s.ref}] ${esc(kindOf(s.source)).toUpperCase()}</div>
            <div class="f">${esc(fileName(s.source))}</div>
@@ -306,8 +310,11 @@ function turnHTML(t, i) {
       </span>
     </div>
     <div id="reason-${i}"></div>` : '';
-  return `<div class="msg" data-i="${i}">
-    <div class="msg user"><h2 class="q">${esc(t.question)}</h2></div>
+  const enter = t._shown ? '' : 'enter';
+  t._shown = true;
+  if (t.retrieved?.length) t._srcShown = true;
+  return `<div class="msg ${enter}" data-i="${i}">
+    <div class="user-q"><h2 class="q">${esc(t.question)}</h2></div>
     ${sources}${body}${foot}</div>`;
 }
 
@@ -345,7 +352,14 @@ async function submit() {
     const dec = new TextDecoder();
     let buf = '';
     let pendingRender = false;
-    const flush = () => { pendingRender = false; updateTurn(i); scrollThread(); };
+    const flush = () => {
+      pendingRender = false;
+      // while tokens stream, only touch the answer text so nothing above it re-renders or flickers
+      const ans = $(`.msg[data-i="${i}"] .answer`);
+      if (ans && turn.answer && !turn.done) ans.innerHTML = renderAnswer(turn.answer, i) + '<span class="caret"></span>';
+      else updateTurn(i);
+      scrollThread();
+    };
     for (;;) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -877,8 +891,8 @@ async function viewSettings() {
       <div class="card section">
         <h3>Answering</h3><p>Retrieval and the model. Changes apply to the next question.</p>
         <label class="field"><span>Retrieval mode</span><select class="input" data-k="retrieval_mode">${['hybrid', 'vector', 'bm25'].map((m) => `<option ${m === s.retrieval_mode ? 'selected' : ''}>${m}</option>`).join('')}</select>
-          <small>Hybrid + rerank scored best in our eval (hit@1 0.68 vs 0.60 vector-only).</small></label>
-        <label class="toggle"><input type="checkbox" data-k="rerank" ${s.rerank ? 'checked' : ''}><span class="sw"></span><span>Re-order with the cross-encoder<br><small class="muted">Adds ~140 ms. Its score also decides when to say "I couldn't find this".</small></span></label>
+          <small>Hybrid scored best in our eval: hit@5 0.92 and MRR 0.77, vs 0.86 / 0.75 vector-only.</small></label>
+        <label class="toggle"><input type="checkbox" data-k="rerank" ${s.rerank ? 'checked' : ''}><span class="sw"></span><span>Re-order with the cross-encoder<br><small class="muted">Off by default: on our set it added ~155 ms and didn't beat plain hybrid. The cross-encoder still scores the top passages to decide when to say "I couldn't find this".</small></span></label>
         <div class="row2"><label class="field"><span>Passages retrieved</span><input class="input" type="number" min="1" max="20" data-k="top_k" value="${s.top_k}"></label>
         <label class="field"><span>Passages sent to the model</span><input class="input" type="number" min="1" max="10" data-k="context_k" value="${s.context_k}"></label></div>
         <label class="field"><span>Refuse below relevance score</span><input class="input" type="number" step="0.5" data-k="min_rerank_score" value="${s.min_rerank_score}">

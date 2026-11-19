@@ -97,7 +97,15 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
         chunks.append(text[start:end].strip())
         if end >= len(text):
             break
-        start = max(end - overlap, start + 1)
+        nxt = max(end - overlap, start + 1)
+        # start the overlap at a sentence or word boundary, not mid-word ("ar origins, methods...")
+        sent = max(text.rfind(". ", nxt - overlap // 2, nxt + overlap // 2), text.rfind("\n", nxt - overlap // 2, nxt + overlap // 2))
+        if sent > start:
+            nxt = sent + 1
+        else:
+            space = text.find(" ", nxt, end)
+            nxt = space + 1 if space != -1 else nxt
+        start = nxt
     return [c for c in chunks if c]
 
 

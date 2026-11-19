@@ -21,7 +21,7 @@ class Settings:
     chunk_size: int = 800
     chunk_overlap: int = 150
     retrieval_mode: str = "hybrid"
-    rerank: bool = True
+    rerank: bool = False
     top_k: int = 5
     context_k: int = 4
     rrf_k: int = 60
