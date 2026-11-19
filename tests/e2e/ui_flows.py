@@ -10,7 +10,7 @@ from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000"
+BASE = next((a for a in sys.argv[1:] if a.startswith("http")), "http://localhost:8000")
 SHOTS = Path(sys.argv[sys.argv.index("--shots") + 1]) if "--shots" in sys.argv else None
 errors: list[str] = []
 results: list[tuple[str, bool, str]] = []
