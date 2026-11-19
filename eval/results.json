@@ -1,46 +1,46 @@
 {
   "questions": 63,
-  "chunks": 1424,
+  "chunks": 1399,
   "documents": 67,
   "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
   "generator": "extractive",
   "rerank": false,
   "modes": {
     "vector": {
-      "hit@1": 0.603,
+      "hit@1": 0.651,
       "hit@3": 0.825,
       "hit@5": 0.857,
-      "hit@10": 0.952,
-      "mrr@10": 0.722,
+      "hit@10": 0.937,
+      "mrr@10": 0.747,
       "citation_accuracy": 0.968,
       "answered_with_citation": 63,
-      "latency_p50_ms": 4.4,
-      "latency_p95_ms": 6.7,
-      "latency_mean_ms": 5.0
+      "latency_p50_ms": 4.2,
+      "latency_p95_ms": 6.1,
+      "latency_mean_ms": 4.5
     },
     "bm25": {
-      "hit@1": 0.587,
-      "hit@3": 0.825,
+      "hit@1": 0.603,
+      "hit@3": 0.841,
       "hit@5": 0.889,
       "hit@10": 0.905,
-      "mrr@10": 0.715,
-      "citation_accuracy": 0.921,
+      "mrr@10": 0.727,
+      "citation_accuracy": 0.889,
       "answered_with_citation": 63,
       "latency_p50_ms": 1.0,
       "latency_p95_ms": 1.7,
       "latency_mean_ms": 1.1
     },
     "hybrid": {
-      "hit@1": 0.651,
-      "hit@3": 0.841,
-      "hit@5": 0.889,
+      "hit@1": 0.667,
+      "hit@3": 0.857,
+      "hit@5": 0.921,
       "hit@10": 0.952,
-      "mrr@10": 0.758,
+      "mrr@10": 0.772,
       "citation_accuracy": 0.937,
       "answered_with_citation": 63,
-      "latency_p50_ms": 5.5,
-      "latency_p95_ms": 6.7,
-      "latency_mean_ms": 5.6
+      "latency_p50_ms": 5.4,
+      "latency_p95_ms": 8.3,
+      "latency_mean_ms": 5.7
     }
   }
 }
