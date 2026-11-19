@@ -79,6 +79,7 @@ def escalate(page):
     page.fill("#tkEmail", "dev@acme-shop.in")
     page.select_option("#tkPrio", "high")
     page.fill("#tkDetails", "We're on the Pro plan, region ap-south-1.")
+    page.wait_for_timeout(450)
     shot(page, "07_escalate_modal.png")
     page.click("#tkCreate")
     expect(page.locator(".toast", has_text="created")).to_be_visible()
@@ -123,6 +124,7 @@ def tickets(page):
     page.wait_for_selector(".col:nth-child(2) .tcard")
     page.locator(".col:nth-child(2) .tcard").first.click()
     expect(page.locator(".timeline .ev.note")).to_be_visible()
+    page.wait_for_timeout(450)
     shot(page, "06_ticket_drawer.png")
     page.click("#dClose")
 
@@ -136,6 +138,7 @@ def kb(page):
                  "Sev-1 incidents are acknowledged within 15 minutes, 24x7. Sev-2 within 2 business hours.\n")
     page.set_input_files("#fileIn", str(f))
     expect(page.locator(".up-row .pill.teal")).to_be_visible(timeout=30000)
+    page.wait_for_timeout(450)
     shot(page, "05_knowledge_base.png")
     page.fill("#docSearch", "kestrel-status")
     page.wait_for_selector("tr.click")

@@ -121,16 +121,17 @@ class AskRequest(BaseModel):
     conversation_id: str | None = None
 
 
-def _retrieve(req: AskRequest, idx: Index):
+def _retrieve(req: AskRequest, idx: Index, query: str | None = None):
     t0 = time.perf_counter()
     rerank = settings.rerank if req.rerank is None else req.rerank
-    hits = idx.search(req.question, k=req.top_k or settings.top_k, mode=req.mode or settings.retrieval_mode,
+    query = query or req.question
+    hits = idx.search(query, k=req.top_k or settings.top_k, mode=req.mode or settings.retrieval_mode,
                       rrf_k=settings.rrf_k, rerank=rerank)
     if rerank:
         score = hits[0][1] if hits else None
     else:
         # ordering stays hybrid (it won on hit@1), but the cross-encoder still decides if anything relevant came back
-        score = idx.relevance(req.question, [c for c, _ in hits[: settings.context_k]])
+        score = idx.relevance(query, [c for c, _ in hits[: settings.context_k]])
     return hits, score, (time.perf_counter() - t0) * 1000
 
 
@@ -176,13 +177,20 @@ def ask_stream(req: AskRequest):
     if idx is None or not idx.chunks:
         raise HTTPException(409, "the knowledge base is empty; upload documents first")
     cid = req.conversation_id
-    if not cid or not store.conversation_exists(cid):
+    previous = ""
+    if cid and store.conversation_exists(cid):
+        users = [m["content"] for m in store.get_conversation(cid)["messages"] if m["role"] == "user"]
+        previous = users[-1] if users else ""
+    else:
         cid = store.new_conversation(req.question)
     store.add_message(cid, "user", req.question)
+    # follow-ups like "and in production?" retrieve nothing useful on their own, so carry the last question along
+    query = f"{previous} {req.question}" if previous else req.question
+    llm_question = f"{req.question}\n(Earlier in this conversation they asked: {previous})" if previous else req.question
 
     def events():
         t0 = time.perf_counter()
-        hits, raw_score, t_ret = _retrieve(req, idx)
+        hits, raw_score, t_ret = _retrieve(req, idx, query)
         score, conf = _confidence(raw_score)
         chunks = [c for c, _ in hits][: settings.context_k]
         yield _sse("meta", {"conversation_id": cid, "retrieved": _retrieved_payload(hits[: settings.context_k], full=True),
@@ -197,13 +205,13 @@ def ask_stream(req: AskRequest):
             yield _sse("token", {"t": NOT_FOUND})
         else:
             try:
-                for tok in gen.stream(req.question, chunks):
+                for tok in gen.stream(llm_question, chunks):
                     parts.append(tok)
                     yield _sse("token", {"t": tok})
                 stats = getattr(gen, "last_stats", {}) or {}
             except Exception as e:  # model down mid-request: finish with the extractive answer
                 fallback = f"{type(e).__name__}: {e}"[:200]
-                text = ExtractiveGenerator().answer(req.question, chunks)["answer"]
+                text = ExtractiveGenerator().answer(query, chunks)["answer"]
                 parts, gen_name = [text], "extractive"
                 yield _sse("replace", {"text": text, "reason": fallback})
         answer = normalize_citations("".join(parts).strip())

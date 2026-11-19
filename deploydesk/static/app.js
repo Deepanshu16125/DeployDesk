@@ -241,7 +241,7 @@ function renderTop() {
     ${t ? `<a class="pill amber" href="#/tickets/${t.id}" style="text-decoration:none"><span class="d"></span>Ticket #${t.id} · ${t.status.replace('_', ' ')}</a>` : ''}
     <span style="margin-left:auto"></span>
     <button class="btn sm ghost" id="escTop">${ICON.person}Talk to a person</button>`;
-  $('#escTop').onclick = () => openEscalate(state.turns.length - 1);
+  $('#escTop').onclick = () => openEscalate(state.turns.length - 1, state.turns[0].question);
 }
 
 function renderThread() {
@@ -528,14 +528,14 @@ function markSpans(text, spans) {
 }
 
 // escalation
-function openEscalate(i) {
+function openEscalate(i, subject) {
   const t = state.turns[i];
   if (!t) return;
   openModal(`
     <div class="modal-head"><h2>Hand this to a person</h2><p>Creates a ticket for the support team with the question, the bot's answer and its sources attached.</p></div>
     <div class="modal-body">
       <div class="quote">${esc(t.question)}</div>
-      <label class="field"><span>Subject</span><input class="input" id="tkSubject" value="${esc(t.question.slice(0, 120))}"></label>
+      <label class="field"><span>Subject</span><input class="input" id="tkSubject" value="${esc((subject || t.question).slice(0, 120))}"></label>
       <div class="row2">
         <label class="field"><span>Your email</span><input class="input" id="tkEmail" placeholder="you@company.com" type="email"></label>
         <label class="field"><span>Priority</span><select class="input" id="tkPrio"><option value="low">Low</option><option value="normal" selected>Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
