@@ -901,12 +901,12 @@ async function viewSettings() {
       <div class="card section">
         <h3>Answering</h3><p>Retrieval and the model. Changes apply to the next question.</p>
         <label class="field"><span>Retrieval mode</span><select class="input" data-k="retrieval_mode">${['hybrid', 'vector', 'bm25'].map((m) => `<option ${m === s.retrieval_mode ? 'selected' : ''}>${m}</option>`).join('')}</select>
-          <small>Hybrid scored best in our eval: hit@5 0.92 and MRR 0.77, vs 0.86 / 0.75 vector-only.</small></label>
-        <label class="toggle"><input type="checkbox" data-k="rerank" ${s.rerank ? 'checked' : ''}><span class="sw"></span><span>Re-order with the cross-encoder<br><small class="muted">Off by default: on our set it added ~155 ms and didn't beat plain hybrid. The cross-encoder still scores the top passages to decide when to say "I couldn't find this".</small></span></label>
+          <small>Hybrid scored best in our eval: hit@5 0.92 and MRR 0.76, vs 0.86 / 0.75 vector-only.</small></label>
+        <label class="toggle"><input type="checkbox" data-k="rerank" ${s.rerank ? 'checked' : ''}><span class="sw"></span><span>Re-order with the cross-encoder<br><small class="muted">Off by default: on our set it added ~145 ms and didn't beat plain hybrid. The cross-encoder still scores the top passages to decide when to say "I couldn't find this".</small></span></label>
         <div class="row2"><label class="field"><span>Passages retrieved</span><input class="input" type="number" min="1" max="20" data-k="top_k" value="${s.top_k}"></label>
         <label class="field"><span>Passages sent to the model</span><input class="input" type="number" min="1" max="10" data-k="context_k" value="${s.context_k}"></label></div>
         <label class="field"><span>Refuse below relevance score</span><input class="input" type="number" step="0.5" data-k="min_rerank_score" value="${s.min_rerank_score}">
-          <small>Cross-encoder logit. In testing, real questions scored ≥ −1.1 and off-topic ones ≤ −7.2.</small></label>
+          <small>Cross-encoder logit. In testing, real questions scored ≥ −5.6 and off-topic ones ≤ −7.8.</small></label>
         <div class="row2"><label class="field"><span>Answer generator</span><select class="input" data-k="generator">${[['ollama', 'Local LLM (Ollama)'], ['extractive', 'Extractive (no LLM)'], ['gemini', 'Gemini API (stub)']].map(([v, l]) => `<option value="${v}" ${v === s.generator ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="field"><span>Model</span><select class="input" data-k="ollama_model">${models.map((m) => `<option ${m === s.ollama_model ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>
           <small>${llm.reachable ? `Ollama reachable · ${llm.models.length} models` : 'Ollama not reachable, answers fall back to extractive'}</small></label></div>
