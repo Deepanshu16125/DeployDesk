@@ -1,0 +1,63 @@
+{"q": "How do I run something after returning a response, like sending an email notification?", "source": "markdown/background-tasks.md", "key": "BackgroundTasks"}
+{"q": "How can I split a large app into multiple files with routers?", "source": "markdown/bigger-applications.md", "key": "APIRouter"}
+{"q": "How do I add validation and metadata to a field inside a Pydantic model body?", "source": "markdown/body-fields.md", "key": "Field"}
+{"q": "How do I expect a single value in the body alongside a model, instead of a query param?", "source": "markdown/body-multiple-params.md", "key": "Body"}
+{"q": "How do I declare a list of sub-models or nested models in a request body?", "source": "markdown/body-nested-models.md", "key": "nested"}
+{"q": "How do I do a partial update with PATCH and only change the fields that were sent?", "source": "markdown/body-updates.md", "key": "exclude_unset"}
+{"q": "How do I allow requests from a frontend running on a different origin?", "source": "markdown/cors.md", "key": "CORSMiddleware"}
+{"q": "How can I run and debug the app from my editor with a breakpoint?", "source": "markdown/debugging.md", "key": "__main__"}
+{"q": "Can a class be used as a dependency instead of a function?", "source": "markdown/dependencies-classes-as-dependencies.md", "key": "class"}
+{"q": "How do I run a dependency for a path operation when I don't need its return value?", "source": "markdown/dependencies-dependencies-in-path-operation-decorators.md", "key": "dependencies"}
+{"q": "How do I open a database session in a dependency and close it after the response?", "source": "markdown/dependencies-dependencies-with-yield.md", "key": "yield"}
+{"q": "How do I apply a dependency to every route of the whole application?", "source": "markdown/dependencies-global-dependencies.md", "key": "whole application"}
+{"q": "What is the Depends function and what is dependency injection?", "source": "markdown/dependencies-index.md", "key": "Dependency Injection"}
+{"q": "Can dependencies depend on other dependencies?", "source": "markdown/dependencies-sub-dependencies.md", "key": "sub-dependencies"}
+{"q": "Why should I build my own Docker image instead of using the tiangolo/uvicorn-gunicorn-fastapi image?", "source": "markdown/deployment-docker.md", "key": "deprecated"}
+{"q": "In a Dockerfile, why copy requirements.txt before the rest of the code?", "source": "markdown/deployment-docker.md", "key": "cache"}
+{"q": "What is TLS termination proxy and why does HTTPS need certificates?", "source": "markdown/deployment-https.md", "key": "TLS Termination Proxy"}
+{"q": "How do certificate renewals work with Let's Encrypt?", "source": "markdown/deployment-https.md", "key": "Let's Encrypt"}
+{"q": "What should I consider for restarts, replication and memory when deploying?", "source": "markdown/deployment-concepts.md", "key": "Restarts"}
+{"q": "How do I start multiple worker processes with the fastapi command?", "source": "markdown/deployment-server-workers.md", "key": "--workers"}
+{"q": "How should I pin the FastAPI version in requirements?", "source": "markdown/deployment-versions.md", "key": "pin"}
+{"q": "How do I run an ASGI server manually on a remote machine?", "source": "markdown/deployment-manually.md", "key": "ASGI"}
+{"q": "How do I convert a Pydantic model to a JSON-compatible dict, e.g. datetime to str?", "source": "markdown/encoder.md", "key": "jsonable_encoder"}
+{"q": "Which extra data types like UUID, datetime and Decimal are supported?", "source": "markdown/extra-data-types.md", "key": "UUID"}
+{"q": "How do I avoid returning the hashed password by having separate input and output models?", "source": "markdown/extra-models.md", "key": "hashed_password"}
+{"q": "Where is the interactive Swagger UI documentation served?", "source": "markdown/first-steps.md", "key": "/docs"}
+{"q": "How do I raise a 404 error with a custom detail message?", "source": "markdown/handling-errors.md", "key": "HTTPException"}
+{"q": "How do I override the handler for request validation errors?", "source": "markdown/handling-errors.md", "key": "RequestValidationError"}
+{"q": "Why are underscores in header parameter names converted to hyphens?", "source": "markdown/header-params.md", "key": "convert_underscores"}
+{"q": "How do I add a description, version and license info to the OpenAPI docs?", "source": "markdown/metadata.md", "key": "license_info"}
+{"q": "How do I write middleware that adds a process time header to every response?", "source": "markdown/middleware.md", "key": "X-Process-Time"}
+{"q": "How do I add tags, summary and mark an endpoint as deprecated?", "source": "markdown/path-operation-configuration.md", "key": "deprecated"}
+{"q": "How do I require a path integer to be greater than or equal to 1?", "source": "markdown/path-params-numeric-validations.md", "key": "ge"}
+{"q": "How do I restrict a path parameter to predefined values using an Enum?", "source": "markdown/path-params.md", "key": "Enum"}
+{"q": "How do I set max length and a regex pattern on a query string?", "source": "markdown/query-params-str-validations.md", "key": "max_length"}
+{"q": "How do I make a query parameter optional with a default of None?", "source": "markdown/query-params.md", "key": "None"}
+{"q": "How do I accept uploaded files and what is UploadFile?", "source": "markdown/request-files.md", "key": "UploadFile"}
+{"q": "Which package must be installed to receive form data?", "source": "markdown/request-forms.md", "key": "python-multipart"}
+{"q": "How do I filter the output data with response_model?", "source": "markdown/response-model.md", "key": "response_model"}
+{"q": "How do I return status code 201 Created?", "source": "markdown/response-status-code.md", "key": "201"}
+{"q": "How do I add example data to the JSON schema of a model?", "source": "markdown/schema-extra-example.md", "key": "examples"}
+{"q": "How do I hash passwords and create JWT access tokens?", "source": "markdown/security-oauth2-jwt.md", "key": "JWT"}
+{"q": "How does OAuth2PasswordBearer get the token from the request?", "source": "markdown/security-first-steps.md", "key": "OAuth2PasswordBearer"}
+{"q": "How do I connect to a SQL database using SQLModel?", "source": "markdown/sql-databases.md", "key": "SQLModel"}
+{"q": "How do I serve static files like images and CSS from a directory?", "source": "markdown/static-files.md", "key": "StaticFiles"}
+{"q": "How do I test my app with TestClient and pytest?", "source": "markdown/testing.md", "key": "TestClient"}
+{"q": "How do I send server-sent events to the client?", "source": "markdown/server-sent-events.md", "key": "EventSourceResponse"}
+{"q": "Which uvicorn flag enables auto-reload during development?", "source": "html/uvicorn-settings.html", "key": "--reload"}
+{"q": "How do I bind uvicorn to a Unix domain socket?", "source": "html/uvicorn-settings.html", "key": "--uds"}
+{"q": "How does uvicorn handle graceful shutdown and the timeout for it?", "source": "html/uvicorn-settings.html", "key": "--timeout-graceful-shutdown"}
+{"q": "How does uvicorn limit concurrency and handle flow control / backpressure?", "source": "html/uvicorn-server-behavior.html", "key": "Flow Control"}
+{"q": "How do I run uvicorn behind Nginx as a reverse proxy?", "source": "html/uvicorn-deployment.html", "key": "Nginx"}
+{"q": "How do I load settings from environment variables and a .env file with BaseSettings?", "source": "html/pydantic-settings.html", "key": "BaseSettings"}
+{"q": "How do I set an env prefix for all settings fields?", "source": "html/pydantic-settings.html", "key": "env_prefix"}
+{"q": "What is the difference between before, after and wrap field validators?", "source": "html/pydantic-validators.html", "key": "wrap"}
+{"q": "How do I validate across multiple fields with a model validator?", "source": "html/pydantic-validators.html", "key": "model_validator"}
+{"q": "What are the four core functions of the AI risk management framework?", "source": "pdf/nist-ai-rmf-100-1.pdf", "key": "GOVERN"}
+{"q": "What characteristics make an AI system trustworthy?", "source": "pdf/nist-ai-rmf-100-1.pdf", "key": "trustworthy"}
+{"q": "How does the AI RMF describe risk tolerance?", "source": "pdf/nist-ai-rmf-100-1.pdf", "key": "Risk Tolerance"}
+{"q": "What are the six functions of the Cybersecurity Framework 2.0?", "source": "pdf/nist-csf-2.pdf", "key": "GOVERN"}
+{"q": "What are CSF Organizational Profiles, current and target?", "source": "pdf/nist-csf-2.pdf", "key": "Target Profile"}
+{"q": "What are the CSF Tiers used for?", "source": "pdf/nist-csf-2.pdf", "key": "Tiers"}
+{"q": "How should an organization manage cybersecurity supply chain risk?", "source": "pdf/nist-csf-2.pdf", "key": "supply chain"}
