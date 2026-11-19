@@ -28,7 +28,7 @@ Speed on an 8-core server with no GPU: words start appearing after about 2 secon
 - Scanned PDFs need OCR, which it doesn't do. Tables in PDFs come through as flat text.
 - If you're allowed a cloud model later, there's a Gemini option in config. I haven't tested it with a real key.
 
-**If something goes wrong.** Every request writes one line to `logs/requests.jsonl` with a request id, and the same id is in the `X-Request-ID` response header. Send me the id with any bad answer and I can see exactly what it retrieved. `/health` shows whether the index and the model are up, and the dot at the bottom left of the app turns grey if the model is unreachable.
+**If something goes wrong.** Every request writes one line to `logs/requests.jsonl` with a request id, and the same id is in the `X-Request-ID` response header. Send me the id with any bad answer and I can see exactly what it retrieved. `/health` and the dot at the bottom left of the app show whether the index is loaded. The Settings page lists the models Ollama can see, so check there if answers stop coming. If the model is down, answers fall back to quoting the best passages instead of failing.
 
 Thanks for the time you spent on the discovery call. Happy to pair on the first week of real questions.
 
