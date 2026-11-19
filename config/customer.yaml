@@ -19,7 +19,7 @@ rerank: false
 top_k: 5
 context_k: 4
 rrf_k: 60
-min_rerank_score: -4.0
+min_rerank_score: -6.5  # real questions scored >= -5.6, off-topic <= -7.8 (eval + demo set)
 generator: ollama
 ollama_url: http://localhost:11434
 ollama_model: qwen2.5-3b-local

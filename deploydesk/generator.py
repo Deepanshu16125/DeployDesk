@@ -18,7 +18,8 @@ Rules:
 - Put the source number in square brackets at the end of EVERY sentence, before the full stop. Example:
   "Use `CORSMiddleware` to allow other origins [2]. Pass the allowed URLs in `allow_origins` [2]."
 - Be concise: 2 to 5 sentences, or a short list of steps. Include exact names (functions, flags, settings) from the sources.
-- If the sources do not contain the answer, reply exactly: "{not_found}"
+- Only if none of the sources are about the question, reply exactly: "{not_found}"
+  If they cover part of it, answer that part and say what is missing.
 - Never invent sources, numbers, URLs or code that is not in the sources."""
 
 

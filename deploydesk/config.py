@@ -25,7 +25,7 @@ class Settings:
     top_k: int = 5
     context_k: int = 4
     rrf_k: int = 60
-    min_rerank_score: float = -4.0
+    min_rerank_score: float = -6.5
     generator: str = "extractive"
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5-3b-local"
