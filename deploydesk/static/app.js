@@ -48,9 +48,16 @@ const fileName = (src) => src.split('/').pop();
 const kindOf = (src) => { const e = src.split('.').pop().toLowerCase(); return { htm: 'html', markdown: 'md' }[e] || e; };
 const initials = (name) => (name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
+// keep the caret inline at the end of the last paragraph instead of on its own line
+const withCaret = (html) => {
+  const caret = '<span class="caret"></span>';
+  return /<\/(p|li)>\s*(<\/[ou]l>)?\s*$/.test(html) ? html.replace(/(<\/(p|li)>\s*(<\/[ou]l>)?\s*)$/, caret + '$1') : html + caret;
+};
+
 function toast(msg, err = false) {
   const t = document.createElement('div');
   t.className = 'toast' + (err ? ' err' : '');
+  t.dataset.at = Date.now();
   t.innerHTML = msg;
   $('#toasts').appendChild(t);
   setTimeout(() => { t.style.transition = 'opacity .3s'; t.style.opacity = 0; setTimeout(() => t.remove(), 300); }, 3200);
@@ -153,6 +160,8 @@ async function route(force) {
   const [, view, arg] = hash.split('/');
   setActiveNav(view === 'c' ? 'ask' : view);
   closeModal();
+  // old toasts don't mean anything on a new page; keep one that was just clicked through
+  document.querySelectorAll('#toasts .toast').forEach((t) => { if (Date.now() - t.dataset.at > 300) t.remove(); });
   if (view === 'c' && arg) return viewAsk(arg.split('?')[0]);
   if (view === 'conversations') return viewConversations();
   if (view === 'tickets') return viewTickets(arg);
@@ -287,7 +296,7 @@ function turnHTML(t, i) {
       <small>Nothing in the indexed docs matched closely enough, so I didn't guess.</small></div>
       <button class="btn rust" data-escalate="${i}">${ICON.person}Ask a person</button></div>`;
   } else if (t.answer) {
-    body = `<div class="answer">${renderAnswer(t.answer, i)}${t.done ? '' : '<span class="caret"></span>'}</div>`;
+    body = `<div class="answer">${t.done ? renderAnswer(t.answer, i) : withCaret(renderAnswer(t.answer, i))}</div>`;
   } else if (t.retrieved?.length && !t.done) {
     body = `<div class="stage"><span class="spinner"></span>Writing an answer from ${t.retrieved.length} sources…</div>`;
   }
@@ -356,7 +365,7 @@ async function submit() {
       pendingRender = false;
       // while tokens stream, only touch the answer text so nothing above it re-renders or flickers
       const ans = $(`.msg[data-i="${i}"] .answer`);
-      if (ans && turn.answer && !turn.done) ans.innerHTML = renderAnswer(turn.answer, i) + '<span class="caret"></span>';
+      if (ans && turn.answer && !turn.done) ans.innerHTML = withCaret(renderAnswer(turn.answer, i));
       else updateTurn(i);
       scrollThread();
     };
@@ -849,8 +858,8 @@ async function viewAnalytics() {
   ] : [];
   $('#charts').innerHTML = `
     <div class="grid2">
-      <div class="card chart-card"><h3>Questions per ${a.volume_unit}</h3><div class="sub">${a.volume_unit === 'hour' ? 'Last 24 hours' : 'Last 14 days'}, from the request log</div>
-        <div class="chart">${barChart(a.volume, { label: (d) => d.day, value: (d) => d.count, xEvery: a.volume_unit === 'hour' ? 4 : 2, color: C.ink })}</div></div>
+      <div class="card chart-card"><h3>Questions per ${a.volume_unit}</h3><div class="sub">${{ hour: 'Last 24 hours', day: 'Last 14 days' }[a.volume_unit] || 'Last 3 hours'}, from the request log</div>
+        <div class="chart">${barChart(a.volume, { label: (d) => d.day, value: (d) => d.count, xEvery: a.volume_unit === 'hour' ? 4 : a.volume_unit === 'day' ? 2 : 3, color: C.ink })}</div></div>
       <div class="card chart-card"><h3>Answer latency</h3><div class="sub">Full streamed answer, seconds (n=${a.latency.n})</div>
         <div class="chart">${barChart(a.latency.histogram_s, { label: (d) => d.from + 's', value: (d) => d.count, color: C.rust, xEvery: 2 })}</div></div>
     </div>
