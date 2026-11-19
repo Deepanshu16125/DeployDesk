@@ -472,30 +472,18 @@ def analytics():
     ttft = [r["ttft_ms"] for r in llm if r["ttft_ms"]]
     tps = [r["tokens_per_s"] for r in llm if r["tokens_per_s"]]
     today = time.time()
-    days = []
-    for d in range(13, -1, -1):
-        start = today - (d + 1) * 86400
-        end = today - d * 86400
-        days.append({"day": time.strftime("%d %b", time.localtime(end)),
-                     "count": sum(1 for r in reqs if start <= r["created_at"] < end)})
-    hours = []
-    for h in range(23, -1, -1):
-        end = today - h * 3600
-        hours.append({"day": time.strftime("%H:00", time.localtime(end - 3600)),
-                      "count": sum(1 for r in reqs if end - 3600 <= r["created_at"] < end)})
-    span_days = (today - reqs[0]["created_at"]) / 86400 if reqs else 0
-    # a fresh deployment has everything inside one hour bar, so zoom in to 10-minute buckets
-    slots = []
-    for i in range(17, -1, -1):
-        end = today - i * 600
-        slots.append({"day": time.strftime("%H:%M", time.localtime(end - 600)),
-                      "count": sum(1 for r in reqs if end - 600 <= r["created_at"] < end)})
-    if span_days > 2:
-        volume, unit = days, "day"
-    elif span_days > 3 / 24:
-        volume, unit = hours, "hour"
-    else:
-        volume, unit = slots, "10 min"
+    # pick a bucket so the real range of data fills roughly 12-24 bars
+    span = today - reqs[0]["created_at"] if reqs else 3600
+    for size, unit in ((60, "minute"), (300, "5 min"), (900, "15 min"), (3600, "hour"), (21600, "6 hours"), (86400, "day")):
+        if span / size <= 24:
+            break
+    n_buckets = max(12, min(24, int(span // size) + 1))
+    fmt = "%d %b" if size >= 86400 else "%H:%M"
+    volume = []
+    for i in range(n_buckets - 1, -1, -1):
+        end = today - i * size
+        volume.append({"day": time.strftime(fmt, time.localtime(end - size)),
+                       "count": sum(1 for r in reqs if end - size <= r["created_at"] < end)})
     counts: dict[str, int] = {}
     for m in store._all("SELECT citations FROM messages WHERE role='assistant'"):
         for c in json.loads(m["citations"] or "[]"):
@@ -515,7 +503,7 @@ def analytics():
             "latency": {"histogram_s": _histogram(lat), "p50_s": _pct(lat, 50), "p95_s": _pct(lat, 95),
                         "n": len(lat), "ttft_p50_ms": _pct(ttft, 50), "ttft_p95_ms": _pct(ttft, 95),
                         "tokens_per_s_p50": _pct(tps, 50)},
-            "volume": volume, "volume_unit": unit,
+            "volume": volume, "volume_unit": unit, "volume_minutes": n_buckets * size // 60,
             "top_sources": [{"source": s, "count": n} for s, n in top_sources],
             "unanswered": unanswered, "feedback": store.recent_feedback(8), "eval": evals,
             "generator": settings.generator, "model": settings.ollama_model}

@@ -33,6 +33,7 @@ def step(name):
 def shot(page, name):
     if SHOTS:
         SHOTS.mkdir(exist_ok=True)
+        page.wait_for_function("!document.querySelector('#toasts .toast')", timeout=8000)
         page.screenshot(path=str(SHOTS / name))
 
 

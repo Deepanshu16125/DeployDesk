@@ -837,7 +837,8 @@ async function viewAnalytics() {
   const answerRate = llm ? Math.round((llm.answered / llm.questions) * 100) + '%' : '–';
   $('#kpis').innerHTML = [
     ['Questions asked', fmtNum(c.questions), `${fmtNum(c.conversations)} conversations`],
-    ['Helpful rate', rated ? Math.round((c.thumbs_up / rated) * 100) + '%' : '–', `${c.thumbs_up} up · ${c.thumbs_down} down`],
+    // a percentage off two votes says nothing
+    ['Helpful rate', rated >= 5 ? Math.round((c.thumbs_up / rated) * 100) + '%' : '–', rated >= 5 ? `${c.thumbs_up} up · ${c.thumbs_down} down` : `${rated} rating${rated === 1 ? '' : 's'} so far, need 5`],
     ['Escalated', fmtNum(c.tickets_total), `${c.tickets_open} still open`],
     ['Median answer time', a.latency.p50_s != null ? a.latency.p50_s.toFixed(1) + 's' : '–', `p95 ${a.latency.p95_s != null ? a.latency.p95_s.toFixed(1) + 's' : '–'} · n=${a.latency.n}`],
     ['First token', a.latency.ttft_p50_ms ? (a.latency.ttft_p50_ms / 1000).toFixed(1) + 's' : '–', a.latency.tokens_per_s_p50 ? `${Math.round(a.latency.tokens_per_s_p50)} tok/s on CPU` : 'streamed'],
@@ -858,8 +859,8 @@ async function viewAnalytics() {
   ] : [];
   $('#charts').innerHTML = `
     <div class="grid2">
-      <div class="card chart-card"><h3>Questions per ${a.volume_unit}</h3><div class="sub">${{ hour: 'Last 24 hours', day: 'Last 14 days' }[a.volume_unit] || 'Last 3 hours'}, from the request log</div>
-        <div class="chart">${barChart(a.volume, { label: (d) => d.day, value: (d) => d.count, xEvery: a.volume_unit === 'hour' ? 4 : a.volume_unit === 'day' ? 2 : 3, color: C.ink })}</div></div>
+      <div class="card chart-card"><h3>Questions per ${a.volume_unit}</h3><div class="sub">Last ${a.volume_minutes >= 2880 ? Math.round(a.volume_minutes / 1440) + ' days' : a.volume_minutes >= 120 ? Math.round(a.volume_minutes / 60) + ' hours' : a.volume_minutes + ' minutes'}, from the request log</div>
+        <div class="chart">${barChart(a.volume, { label: (d) => d.day, value: (d) => d.count, xEvery: Math.ceil(a.volume.length / 6), color: C.ink })}</div></div>
       <div class="card chart-card"><h3>Answer latency</h3><div class="sub">Full streamed answer, seconds (n=${a.latency.n})</div>
         <div class="chart">${barChart(a.latency.histogram_s, { label: (d) => d.from + 's', value: (d) => d.count, color: C.rust, xEvery: 2 })}</div></div>
     </div>
