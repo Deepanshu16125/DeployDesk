@@ -103,7 +103,8 @@ def conversations(page):
     n = page.locator("tr.click").count()
     page.fill("#convSearch", "paneer")
     page.wait_for_timeout(500)
-    assert page.locator("tr.click").count() == 1, "search did not filter"
+    found = page.locator("tr.click").count()
+    assert 1 <= found < n, "search did not filter"  # one paneer question per e2e run
     page.fill("#convSearch", "")
     page.wait_for_timeout(500)
     assert page.locator("tr.click").count() == n
@@ -118,7 +119,7 @@ def tickets(page):
     page.locator(".tcard").first.click()
     page.select_option("#tStatus", "in_progress")
     page.fill("#tAssignee", "Priya Nair")
-    page.fill("#tNote", "Reproduced. Docs page for env vars is missing the prefix example.")
+    page.fill("#tNote", "Answer is right for dev. Sent them the allow_origins example for their prod domain.")
     page.click("#tSave")
     expect(page.locator(".toast", has_text="updated")).to_be_visible()
     page.wait_for_selector(".col:nth-child(2) .tcard")
