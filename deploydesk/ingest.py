@@ -1,4 +1,3 @@
-"""Load PDF / Markdown / HTML documents and split them into overlapping chunks."""
 from __future__ import annotations
 import hashlib
 import re
@@ -29,7 +28,6 @@ def _clean(text: str) -> str:
 
 
 def load_document(path: Path) -> list[tuple[str, str]]:
-    """Return a list of (location, text) sections for one file."""
     ext = path.suffix.lower()
     if ext == ".pdf":
         reader = PdfReader(str(path))
@@ -39,19 +37,41 @@ def load_document(path: Path) -> list[tuple[str, str]]:
         for tag in soup(["script", "style", "nav", "header", "footer", "aside"]):
             tag.decompose()
         main = soup.find("article") or soup.find("main") or soup.body or soup
-        return _split_sections(main.get_text("\n"), heading_re=None)
+        for a in main.select("a.headerlink"):
+            a.decompose()
+        for h in main.find_all(["h1", "h2", "h3"]):
+            h.replace_with(f"\n\n## {h.get_text(' ', strip=True)}\n")
+        # get_text("\n") puts every inline tag on its own line, so add breaks only after block tags
+        for tag in main.find_all(["p", "li", "pre", "tr", "br", "dt", "dd", "table", "ul", "ol", "div"]):
+            tag.append("\n")
+        text = re.sub(r"[ \t]*\n[ \t]*", "\n", main.get_text(""))
+        return _split_sections(_strip_markdown(text), heading_re=r"^## +(.+)$")
     text = path.read_text(errors="ignore")
     # drop fenced-code language markers / admonition syntax but keep code text
     text = re.sub(r"\{\*[^}]*\*\}", "", text)
-    return _split_sections(text, heading_re=r"^#{1,4} +(.+)$")
+    return _split_sections(_strip_markdown(text), heading_re=r"^#{1,4} +(.+)$")
+
+
+def _strip_markdown(text: str) -> str:
+    # keep headings (the splitter needs them) but drop syntax that only adds noise to embeddings and the UI
+    text = re.sub(r"\s*\{\s*#[^}]*\}", "", text)          # mkdocs anchors
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)    # [text](url) -> text
+    text = re.sub(r"\*\*(?=\S)(.+?)(?<=\S)\*\*", r"\1", text)  # **bold**; not __x__, that's usually a dunder
+    text = re.sub(r"^///.*$|^!!!.*$", "", text, flags=re.M)  # admonition fences
+    text = re.sub(r"</?(details|summary|div|span|br)[^>]*>", "", text)
+    text = text.replace("¶", "")
+    return text
 
 
 def _split_sections(text: str, heading_re: str | None) -> list[tuple[str, str]]:
     if not heading_re:
         return [("document", _clean(text))]
     sections, current, buf = [], "intro", []
+    in_code = False
     for line in text.splitlines():
-        m = re.match(heading_re, line)
+        if line.lstrip().startswith("```"):
+            in_code = not in_code
+        m = None if in_code else re.match(heading_re, line)  # "# comment" inside code is not a heading
         if m:
             if buf:
                 sections.append((current, _clean("\n".join(buf))))
@@ -81,16 +101,25 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
     return [c for c in chunks if c]
 
 
+def ingest_file(path: Path, rel: str, size: int = 800, overlap: int = 150) -> list[Chunk]:
+    chunks: list[Chunk] = []
+    for loc, text in load_document(path):
+        for piece in chunk_text(text, size, overlap):
+            if len(piece) < 40:
+                continue
+            cid = hashlib.sha1(f"{rel}|{loc}|{len(chunks)}|{piece[:80]}".encode()).hexdigest()[:12]
+            chunks.append(Chunk(cid, rel, loc, piece))
+    return chunks
+
+
+def list_files(docs_dir: str | Path) -> list[Path]:
+    return sorted(p for p in Path(docs_dir).rglob("*") if p.suffix.lower() in SUPPORTED)
+
+
 def ingest_dir(docs_dir: str | Path, size: int = 800, overlap: int = 150) -> tuple[list[Chunk], int]:
     docs_dir = Path(docs_dir)
-    files = sorted(p for p in docs_dir.rglob("*") if p.suffix.lower() in SUPPORTED)
+    files = list_files(docs_dir)
     chunks: list[Chunk] = []
     for f in files:
-        rel = str(f.relative_to(docs_dir))
-        for loc, text in load_document(f):
-            for piece in chunk_text(text, size, overlap):
-                if len(piece) < 40:
-                    continue
-                cid = hashlib.sha1(f"{rel}|{loc}|{piece[:80]}|{len(chunks)}".encode()).hexdigest()[:12]
-                chunks.append(Chunk(cid, rel, loc, piece))
+        chunks.extend(ingest_file(f, str(f.relative_to(docs_dir)), size, overlap))
     return chunks, len(files)
