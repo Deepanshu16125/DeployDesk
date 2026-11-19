@@ -60,14 +60,6 @@ def citation(page):
     shot(page, "03_answer_with_sources.png")
 
 
-@step("thumbs down with reason")
-def thumbs_down(page):
-    page.locator('[data-rate="-1"]').last.click()
-    page.locator('[id^="reasonIn-"]').fill("didn't mention the env var name")
-    page.locator('[id^="reasonBtn-"]').click()
-    expect(page.locator(".toast", has_text="logged")).to_be_visible()
-
-
 @step("follow-up in same conversation")
 def follow_up(page):
     url = page.url
@@ -88,6 +80,14 @@ def escalate(page):
     page.click("#tkCreate")
     expect(page.locator(".toast", has_text="created")).to_be_visible()
     expect(page.locator(".thread-top .pill", has_text="Ticket")).to_be_visible()
+
+
+@step("thumbs down with reason")
+def thumbs_down(page):
+    page.locator('[data-rate="-1"]').last.click()
+    page.locator('[id^="reasonIn-"]').fill("e2e test rating")
+    page.locator('[id^="reasonBtn-"]').click()
+    expect(page.locator(".toast", has_text="logged")).to_be_visible()
 
 
 @step("off-topic question is refused")
@@ -192,7 +192,7 @@ def main():
         page = browser.new_page(viewport={"width": 1440, "height": 900}, device_scale_factor=1)
         page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
         page.on("console", lambda m: m.type == "error" and errors.append(f"console: {m.text}"))
-        for fn in (empty, ask_suggestion, citation, thumbs_down, follow_up, escalate, off_topic,
+        for fn in (empty, ask_suggestion, citation, follow_up, escalate, thumbs_down, off_topic,
                    conversations, tickets, kb, analytics, settings):
             fn(page)
         browser.close()

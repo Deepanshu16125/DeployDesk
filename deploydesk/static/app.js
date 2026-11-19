@@ -49,6 +49,8 @@ const kindOf = (src) => { const e = src.split('.').pop().toLowerCase(); return {
 const initials = (name) => (name || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
 // keep the caret inline at the end of the last paragraph instead of on its own line
+// mid-stream the model has often opened a `code span but not closed it yet
+const closeTicks = (text) => ((text.split('\n').pop().match(/`/g) || []).length % 2 ? text + '`' : text);
 const withCaret = (html) => {
   const caret = '<span class="caret"></span>';
   return /<\/(p|li)>\s*(<\/[ou]l>)?\s*$/.test(html) ? html.replace(/(<\/(p|li)>\s*(<\/[ou]l>)?\s*)$/, caret + '$1') : html + caret;
@@ -327,7 +329,7 @@ function turnHTML(t, i) {
       <small>Nothing in the indexed docs matched closely enough, so I didn't guess.</small></div>
       <button class="btn rust" data-escalate="${i}">${ICON.person}Ask a person</button></div>`;
   } else if (t.answer) {
-    body = `<div class="answer">${t.done ? renderAnswer(t.answer, i) : withCaret(renderAnswer(t.answer, i))}</div>`;
+    body = `<div class="answer">${t.done ? renderAnswer(t.answer, i) : withCaret(renderAnswer(closeTicks(t.answer), i))}</div>`;
   } else if (t.retrieved?.length && !t.done) {
     body = `<div class="stage"><span class="spinner"></span>Writing an answer from ${t.retrieved.length} sources…</div>`;
   }
@@ -396,7 +398,7 @@ async function submit() {
       pendingRender = false;
       // while tokens stream, only touch the answer text so nothing above it re-renders or flickers
       const ans = $(`.msg[data-i="${i}"] .answer`);
-      if (ans && turn.answer && !turn.done) ans.innerHTML = withCaret(renderAnswer(turn.answer, i));
+      if (ans && turn.answer && !turn.done) ans.innerHTML = withCaret(renderAnswer(closeTicks(turn.answer), i));
       else updateTurn(i);
       scrollThread();
     };
