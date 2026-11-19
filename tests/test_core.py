@@ -52,6 +52,31 @@ def test_extractive_cites_and_handles_no_match():
     assert none["citations"] == []
 
 
+def test_normalize_citations():
+    from deploydesk.generator import normalize_citations
+    assert normalize_citations("Do X. [3] Then Y [1, 2].") == "Do X [3]. Then Y [1] [2]."
+
+
+def test_markdown_cleanup_keeps_dunders():
+    from deploydesk.ingest import _strip_markdown
+    out = _strip_markdown('Run **uvicorn** with `if __name__ == "__main__":` see [docs](https://x.y) { #anchor }')
+    assert out == 'Run uvicorn with `if __name__ == "__main__":` see docs'
+
+
+def test_code_comments_are_not_headings():
+    from deploydesk.ingest import _split_sections
+    secs = _split_sections("# Title\n\ntext\n\n```\n# not a heading\nx = 1\n```\n", r"^#{1,4} +(.+)$")
+    assert [loc for loc, _ in secs] == ["Title"]
+
+
+def test_highlights_point_at_supporting_sentence():
+    from deploydesk.highlight import highlights
+    c = [Chunk("x1", "a.md", "intro", "Shipping is free. The refund window is 30 days from delivery. Call us anytime.")]
+    spans = highlights("Refunds can be requested within 30 days of delivery [1].", c, [1])
+    start, end = spans[1][0]
+    assert "30 days" in c[0].text[start:end]
+
+
 def test_gemini_stub_falls_back(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     c = [Chunk("x1", "a.md", "intro", "The refund window is 30 days from delivery.")]
