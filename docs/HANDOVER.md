@@ -1,33 +1,35 @@
-# DeployDesk handover note
+# Handover: Kestrel Help (DeployDesk v0.2)
 
-To: Acme Platform Team
+To: Kestrel support team (Priya, Arjun, Sam, Meera) and Tom on platform
 From: Deepanshu
-Status: draft, v0.1 (in progress)
+Date: 19 Nov 2026
 
-Hi team,
+Hi all,
 
-This is the short version of what you're getting, how to run it, and what to watch. The longer runbook is in the README.
+Here's where the help desk stands, how to run it, and what I'd keep an eye on. The README has the full runbook and the eval details. This note covers the things you'll actually hit.
 
-**What it does.** DeployDesk answers questions from your own docs and shows which file (and page or section) each part of the answer came from. Right now it's loaded with 67 documents (FastAPI and Uvicorn docs, Pydantic settings/validators pages, and two NIST PDFs) as a stand-in for your knowledge base, split into 1,461 chunks. Nothing leaves your network: the embedding model runs locally and the default answer mode doesn't call any LLM.
+**What you're getting.** A help desk that answers from your docs. Right now that's the FastAPI, Uvicorn and Pydantic pages you send customers to, plus the two NIST documents Meera uses for security questionnaires: 67 files, 1,409 passages. Answers stream in with numbered citations, and clicking a number shows the exact passage with the supporting sentence highlighted. If it can't find a good passage it says so and offers to hand the question to one of you. That creates a ticket on the Tickets board with the question, its answer and the sources already attached. Everything runs on your own machine, including the language model, so no docs or customer questions go to an outside API.
 
-**How good is it.** I built a test set of 63 questions with the file each answer should come from. With the current settings (hybrid search, top 5) the right passage is in the top 5 results for 90.5% of questions, and it's the first result 73% of the time. On the same set, vector-only search got the first result right 58.7% of the time, which is why hybrid is the default. Median end-to-end response time over HTTP was about 11 ms on an 8-core VM with no GPU. Re-run `python eval/run_eval.py` after you swap in your docs; the numbers above are for the demo set, not yours.
+**How well it works on the questions I tested.** I wrote 63 questions with you in mind and labelled where each answer lives. The right passage is in the top five results 92% of the time. Every answer cites something, and it refused all 10 off-topic questions I tried (billing, pricing, the weather) without wrongly refusing any real one. The weak spot is wording: the model is small, so it sometimes blends two passages or paraphrases loosely. An automatic check agreed that only about 43% of cited sentences are fully backed by their passage. Please read the cited passage before pasting anything into a questionnaire. That's why the highlight is there.
 
-**Running it.**
-1. Put your PDFs, Markdown and HTML files in `data/raw/`.
-2. Set a real API key: `export DEPLOYDESK_API_KEYS=<something long>`.
-3. `docker compose up -d --build`, then `curl -X POST localhost:8000/ingest -H "X-API-Key: $DEPLOYDESK_API_KEYS"`.
-4. Check `curl localhost:8000/health` says `"status": "ok"`. The chat page is at `/`, the numbers at `/dashboard`.
+Speed on an 8-core server with no GPU: words start appearing after about 2 seconds, and a full answer takes about 4.5 seconds.
 
-**Things you'll want to change.** Everything customer-specific is in `config/customer.yaml` (name, doc folder, chunk size, top_k, which answer generator). Copy that file per team rather than editing code.
+**Day to day.**
+- New or updated doc: drop it on the Knowledge base page. It's searchable within a second. Deleting a doc there removes it from answers straight away.
+- Thumbs down asks for a reason. Those reasons and the questions it couldn't answer show up under Analytics → "Gaps in the docs". I'd go through that list once a week, because it's the most useful output of the whole thing.
+- Tickets move open → in progress → waiting → resolved. Notes are internal only.
 
-**Known limits, so nobody is surprised.**
-- The default answers are extractive: they stitch together the most relevant sentences with citations. They're accurate to the source but can read choppy. Switching `generator` to `ollama` gives written answers but is much slower on CPU.
-- The Gemini / Vertex AI option is a stub. It works if you set `GEMINI_API_KEY`, but I haven't tested it against a real key.
-- Re-ingest rebuilds the whole index (about 20 s for the demo set). Fine for hundreds of files, not for tens of thousands.
-- There's no user management, just API keys. Put it behind your SSO/reverse proxy if it goes beyond your team.
-- Tables and scanned images in PDFs don't come through well (no OCR).
+**Running it.** `docker compose up -d --build`, then once `docker compose --profile setup run --rm ollama-pull` to download the model (about 2 GB). Set `DEPLOYDESK_API_KEYS` to a long random value first, and set `demo_mode: false` in `config/customer.yaml`. Demo mode puts the key in the page so the demo works without a login, which is fine for a laptop and not fine on the network. The app container starts in about 5 seconds. Note that I tested the container with host networking on my VM. The compose file is written for a normal Docker host, but I haven't run that exact setup yet, so please tell me if it gives you trouble.
 
-**If something breaks.** Every request is logged as one JSON line in `logs/requests.jsonl` with a request id, status and latency; the same id is in the `X-Request-ID` response header, so send me that id with any bad answer. `/metrics` shows live p50/p95.
+**Things I'd change before wider rollout.**
+- Put it behind your SSO. API keys are the only auth right now, and the tickets board has no per-user login.
+- The "refuse" threshold (`min_rerank_score: -6.5`) was tuned on my questions. Once you have a week of real traffic, check the refused ones in Analytics and move it if real questions are getting blocked.
+- Follow-up questions work for simple cases ("and in production?") but it only remembers the previous question, not the whole conversation.
+- Scanned PDFs need OCR, which it doesn't do. Tables in PDFs come through as flat text.
+- If you're allowed a cloud model later, there's a Gemini option in config. I haven't tested it with a real key.
 
-Thanks,
+**If something goes wrong.** Every request writes one line to `logs/requests.jsonl` with a request id, and the same id is in the `X-Request-ID` response header. Send me the id with any bad answer and I can see exactly what it retrieved. `/health` shows whether the index and the model are up, and the dot at the bottom left of the app turns grey if the model is unreachable.
+
+Thanks for the time you spent on the discovery call. Happy to pair on the first week of real questions.
+
 Deepanshu

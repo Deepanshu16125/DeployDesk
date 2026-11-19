@@ -2,19 +2,19 @@
   "image": "deploydesk:0.2",
   "runs": [
     {
-      "ready_s": 5.5,
+      "ready_s": 4.6,
       "first_answer_s": 6.2,
-      "retrieval_ms": 220.9
+      "retrieval_ms": 1023.5
     },
     {
-      "ready_s": 5.4,
-      "first_answer_s": 3.9,
-      "retrieval_ms": 218.1
+      "ready_s": 4.4,
+      "first_answer_s": 4.2,
+      "retrieval_ms": 844.5
     },
     {
-      "ready_s": 5.7,
-      "first_answer_s": 3.1,
-      "retrieval_ms": 288.3
+      "ready_s": 4.2,
+      "first_answer_s": 3.2,
+      "retrieval_ms": 820.5
     }
   ]
 }
