@@ -1,0 +1,17 @@
+# DeployDesk customer profile. Copy this file per customer and point DEPLOYDESK_CONFIG at it.
+customer_name: "Acme Platform Team (demo)"
+assistant_name: "DeployDesk"
+docs_dir: "data/raw"          # drop the customer's PDFs / Markdown / HTML here
+index_dir: "data/index"
+embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+chunk_size: 800
+chunk_overlap: 150
+retrieval_mode: "hybrid"      # hybrid | vector | bm25
+top_k: 5
+rrf_k: 60
+generator: "extractive"       # extractive | ollama | gemini (stub, needs GEMINI_API_KEY)
+ollama_url: "http://localhost:11434"
+ollama_model: "qwen2.5:0.5b"
+gemini_model: "gemini-1.5-flash"
+api_keys: ["dev-key-change-me"] # override in production with env DEPLOYDESK_API_KEYS
+log_file: "logs/requests.jsonl"
